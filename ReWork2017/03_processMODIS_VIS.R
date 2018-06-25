@@ -1,4 +1,5 @@
-#03_processMODIS_VIS
+#This script extracts the visible channels of MODIS for the locations of the
+#climate stations
 
 rm(list=ls())
 library(rgdal)

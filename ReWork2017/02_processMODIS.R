@@ -1,4 +1,5 @@
-### create two table with extracted Data and the corresponding overflight times
+### This script extracts the MODIS LST and overflight time information for the
+# locations of teh climate stations
 rm(list=ls())
 library(rgdal)
 library(raster)
@@ -64,7 +65,8 @@ for (year in years){
       #                     origin_of_file[2]-dim(dat)[1]*1000,origin_of_file[2])
       daynight <- "Day"
       if("Night"%in%strsplit(filelist_data[i],"_")[[1]]){daynight="Night"}
-      dataTable[[sensor]][[i]] <- data.frame("Date"=substr(filelist_time[i],nchar(filelist_time[i])-10,nchar(filelist_time[i])-4),
+      dataTable[[sensor]][[i]] <- data.frame("Date"=substr(filelist_time[i],
+                                                           nchar(filelist_time[i])-10,nchar(filelist_time[i])-4),
                                              extract(dat,StationDat),
                                              "Station"=StationDat$Name,
                                              "Sensor"= sensorName,

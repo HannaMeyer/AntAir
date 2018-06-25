@@ -1,4 +1,5 @@
-#04d_extractAux
+#04 This script extracts the auxiliary raster information for the locations
+#of the climate stations
 rm(list=ls())
 library(rgdal)
 library(raster)
@@ -37,4 +38,10 @@ projection(alt)<-projection(StationDat)
 alt_extr <- data.frame("Name"=StationDat$Name, "DEM"=extract(alt,StationDat))
 aux_extr <- merge(aux_extr,alt_extr,by.x="Station",by.y="Name")
 
+ice <- raster (paste0(rasterdata,"bedmap2_thickness.tif"))
+ice[ice>0] <- 1
+ice[ice<0] <- 0
+writeRaster(ice,paste0(rasterdata,"ice.tif"),overwrite=TRUE)
+ice_extr <- data.frame("Name"=StationDat$Name, "ice"=extract(ice,StationDat))
+aux_extr <- merge(aux_extr,ice_extr,by.x="Station",by.y="Name")
 save(aux_extr,file=paste0(rdatapath,"aux_extr.RData"))

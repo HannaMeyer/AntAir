@@ -1,4 +1,5 @@
-#07 run ffs
+#This script performs forward feature selection for selected ML algorithms
+# to determine the best algorithm and the best combination of predictor variables.
 rm(list=ls())
 library(caret)
 library(CAST)
@@ -12,57 +13,47 @@ rdatapath <- paste0(datapath, "/RData/")
 rasterdata <- paste0(datapath,"/raster/")
 Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
-
-calcFFS <- TRUE
-
 trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
-folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", k = 10)
-
-predictors <-trainingDat[,c("LST_day","LST_night","min_hillsh","mean_hillsh","max_hillsh",
-"min_altitude","mean_altitude","max_altitude",
-"refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
-#"min_azimuth","mean_azimuth","max_azimuth",
-"DEM")]
-response <- trainingDat$Temperature
+################################################################################
+k <- 10
+methods <- c("rf","gbm","nnet")
+################################################################################
+folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", k = k)
 
 
-## parallel prozessierung starten
-cl <- makeCluster(10)
-registerDoParallel(cl)
-
-#################### FFS MODEL
-
-if (calcFFS){
-ffs_model <- ffs(predictors,
-                 response,
-                 method = "rf",
-                 importance =TRUE,
-                 tuneGrid = expand.grid(mtry = 2),
-                 trControl = trainControl(method = "cv", 
-                                          index = folds$index,
-                                          indexOut = folds$indexOut,
-                                          savePredictions = TRUE,
-                                          verboseIter=TRUE,
-                                          returnResamp = "all"))
-save(ffs_model,file=paste0(modelpath,"/ffs_model.RData"))
+for (i in 1:length(methods)){
+  predictors <- trainingDat[,c("LST_day","LST_night",
+                               "min_hillsh","mean_hillsh","max_hillsh",
+                               "min_altitude","mean_altitude","max_altitude",
+                               #"refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
+                               #"min_azimuth","mean_azimuth","max_azimuth",
+                               "DEM","ice")]
+  
+  response <- trainingDat$Temperature
+  ctrl <- trainControl(method = "cv", 
+                       index = folds$index,
+                       indexOut = folds$indexOut,
+                       savePredictions = TRUE,
+                       verboseIter=TRUE,
+                       returnResamp = "all")
+  method <- methods[i]
+  
+  if (method=="nnet"){
+    predictors <- data.frame(scale(predictors))
+    ctrl$trace = FALSE
+    ctrl$linout = TRUE
+  }
+  
+  
+  cl <- makeCluster(k)
+  registerDoParallel(cl)
+  ffs_model <- ffs(predictors,
+                   response,
+                   method = method,
+                   importance =TRUE,
+                   tuneLength = 3,
+                   trControl = ctrl)
+  save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,".RData"))
+  stopCluster(cl)
+  
 }
-load(paste0(modelpath,"/ffs_model.RData"))
-#################### FINAL MODEL
-
-predictors <- trainingDat[,names(ffs_model$trainingData)[-length(names(ffs_model$trainingData))]]
-rm(ffs_model)
-gc()
-model_final <- train(predictors,
-                     response,
-                     method = "rf",
-                     importance =TRUE,
-                     tuneLength = 15,
-                     trControl = trainControl(method = "cv", 
-                                              index = folds$index,
-                                              indexOut = folds$indexOut,
-                                              savePredictions = TRUE,
-                                              verboseIter=TRUE,
-                                              returnResamp = "all"))
-save(model_final,file=paste0(modelpath,"/model_final.RData"))
-
-stopCluster(cl)

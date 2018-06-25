@@ -1,3 +1,4 @@
+# this script reads the climate station data, cleans and merges them
 rm(list=ls())
 library(raster)
 library(rgdal)
