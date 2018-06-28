@@ -6,6 +6,8 @@ library(CAST)
 library(parallel)
 library(doParallel)
 library(randomForest)
+library(gbm)
+library(pls)
 mainpath <- "/mnt/sd19007/users/hmeyer/Antarctica/ReModel2017/"
 #mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
 datapath <- paste0(mainpath,"/data/")
@@ -15,11 +17,17 @@ Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
 trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
 ################################################################################
+# choose models and number of folds for cross validation
 k <- 10
-methods <- c("rf","gbm","nnet")
+VIS <- TRUE
+methods <- c("lm","nnet","rf","gbm","pls")
+#methods <- c("pls")
 ################################################################################
-folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", k = k)
-
+trainingDat$timevar <- substr(trainingDat$Date,1,7)
+folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", 
+                              timevar= "timevar",
+                              k = k)
+response <- trainingDat$Temperature
 
 for (i in 1:length(methods)){
   predictors <- trainingDat[,c("LST_day","LST_night",
@@ -28,8 +36,14 @@ for (i in 1:length(methods)){
                                #"refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
                                #"min_azimuth","mean_azimuth","max_azimuth",
                                "DEM","ice")]
-  
-  response <- trainingDat$Temperature
+  if(VIS){
+		  predictors <- trainingDat[,c("LST_day","LST_night",
+                               "min_hillsh","mean_hillsh","max_hillsh",
+                               "min_altitude","mean_altitude","max_altitude",
+                               "refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
+                               #"min_azimuth","mean_azimuth","max_azimuth",
+                               "DEM")]
+  }
   ctrl <- trainControl(method = "cv", 
                        index = folds$index,
                        indexOut = folds$indexOut,
@@ -37,9 +51,10 @@ for (i in 1:length(methods)){
                        verboseIter=TRUE,
                        returnResamp = "all")
   method <- methods[i]
-  
-  if (method=="nnet"){
+  if (method=="nnet"|method=="pls"){
     predictors <- data.frame(scale(predictors))
+  }
+  if (method=="nnet"){
     ctrl$trace = FALSE
     ctrl$linout = TRUE
   }
@@ -53,7 +68,11 @@ for (i in 1:length(methods)){
                    importance =TRUE,
                    tuneLength = 3,
                    trControl = ctrl)
+  if(VIS){
+  save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,"_withVIS.RData"))
+}else{
   save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,".RData"))
+}
   stopCluster(cl)
   
 }

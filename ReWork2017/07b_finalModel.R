@@ -20,7 +20,11 @@ k <- 10
 
 load(paste0(modelpath,"/ffs_model_",bestmodel,".RData"))
 
-folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", k = k)
+folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", 
+                              timevar= "timevar",
+                              k = k)
+
+
 predictors <- trainingDat[,names(ffs_model$trainingData)[-length(
   names(ffs_model$trainingData))]]
 response <- trainingDat$Temperature
