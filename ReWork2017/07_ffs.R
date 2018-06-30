@@ -9,7 +9,6 @@ library(randomForest)
 library(gbm)
 library(pls)
 mainpath <- "/mnt/sd19007/users/hmeyer/Antarctica/ReModel2017/"
-#mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
 datapath <- paste0(mainpath,"/data/")
 rdatapath <- paste0(datapath, "/RData/")
 rasterdata <- paste0(datapath,"/raster/")
@@ -21,9 +20,9 @@ trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
 k <- 10
 VIS <- TRUE
 methods <- c("lm","nnet","rf","gbm","pls")
-#methods <- c("pls")
 ################################################################################
 trainingDat$timevar <- substr(trainingDat$Date,1,7)
+#initialize LLTO CV
 folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", 
                               timevar= "timevar",
                               k = k)
@@ -33,16 +32,14 @@ for (i in 1:length(methods)){
   predictors <- trainingDat[,c("LST_day","LST_night",
                                "min_hillsh","mean_hillsh","max_hillsh",
                                "min_altitude","mean_altitude","max_altitude",
-                               #"refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
-                               #"min_azimuth","mean_azimuth","max_azimuth",
                                "DEM","ice")]
   if(VIS){
-		  predictors <- trainingDat[,c("LST_day","LST_night",
-                               "min_hillsh","mean_hillsh","max_hillsh",
-                               "min_altitude","mean_altitude","max_altitude",
-                               "refl_b01","refl_b02","refl_b03","refl_b04","refl_b05","refl_b06","refl_b07",
-                               #"min_azimuth","mean_azimuth","max_azimuth",
-                               "DEM")]
+    predictors <- trainingDat[,c("LST_day","LST_night",
+                                 "min_hillsh","mean_hillsh","max_hillsh",
+                                 "min_altitude","mean_altitude","max_altitude",
+                                 "refl_b01","refl_b02","refl_b03","refl_b04",
+                                 "refl_b05","refl_b06","refl_b07",
+                                 "DEM")]
   }
   ctrl <- trainControl(method = "cv", 
                        index = folds$index,
@@ -54,25 +51,51 @@ for (i in 1:length(methods)){
   if (method=="nnet"|method=="pls"){
     predictors <- data.frame(scale(predictors))
   }
-  if (method=="nnet"){
-    ctrl$trace = FALSE
-    ctrl$linout = TRUE
-  }
   
   
   cl <- makeCluster(k)
   registerDoParallel(cl)
-  ffs_model <- ffs(predictors,
-                   response,
-                   method = method,
-                   importance =TRUE,
-                   tuneLength = 3,
-                   trControl = ctrl)
+  
+  if(method=="nnet"){
+    ffs_model <- ffs(predictors,
+                     response,
+                     method = method,
+                     tuneLength = 3,
+                     trControl = ctrl,
+                     trace = FALSE,
+                     linout = TRUE)
+    
+    
+  }
+  
+  
+  if(method=="gbm"){
+    ffs_model <- ffs(predictors,
+                     response,
+                     method = method,
+                     tuneLength = 3,
+                     trControl = ctrl,
+                     distribution = "gaussian"
+    )
+  }
+  
+  
+  if(method%in%c("rf","lin","pls")){
+    
+    ffs_model <- ffs(predictors,
+                     response,
+                     method = method,
+                     importance =TRUE,
+                     tuneLength = 3,
+                     trControl = ctrl)
+  }
+
+  
   if(VIS){
-  save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,"_withVIS.RData"))
-}else{
-  save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,".RData"))
-}
+    save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,"_withVIS.RData"))
+  }else{
+    save(ffs_model,file=paste0(modelpath,"/ffs_model_",method,".RData"))
+  }
   stopCluster(cl)
   
 }

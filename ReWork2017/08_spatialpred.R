@@ -18,7 +18,7 @@ MODISpath_VIS <- "/mnt/sd19006/data/users/fdetsch/R-Server/data/MODIS_ARC/PROCES
 tmppath <- paste0(mainpath,"/tmp/")
 model <- get(load(paste0(modelpath,"model_final.RData")))
 
-years <- 2003:2017
+years <- 2002:2017
 
 for (year in years){
   tmppath <- paste0(tmppath,"/",year)
@@ -62,7 +62,7 @@ for (year in years){
     VISdats <- MODIS_VIS[substr(VIS_dates,5,7)==doy]
     VIS <- tryCatch(
       stack(VISdats),error=function(e)e)
-    VIS[is.na(VIS)]<- 0
+    VIS[is.na(VIS)] <- 0
     VIS[VIS<0] <- 0
     
     if(inherits(LST_night,"error")|inherits(LST_day,"error")|inherits(VIS,"error")){
@@ -79,16 +79,14 @@ for (year in years){
                           "min_azimuth","mean_azimuth","max_azimuth")
     
     VIS <- resample(VIS,LST_day)
-    #LST_day <- crop(LST_day,VIS)
-    #LST_night <- crop(LST_night,VIS)
     solarprop <- resample(solarprop,VIS)
     hillshade <- resample(hillshade,VIS)
     names(VIS) <- substr(names(VIS),nchar(names(VIS))-9,nchar(names(VIS))-2)
     preds <- stack(LST_day,LST_night,hillshade,solarprop,VIS)
     names(preds)[1:2] <- c("LST_day","LST_night")
     spatialpred <- predict(preds,model)
-    writeRaster(spatialpred,paste0(predpath,"/",year,"/prediction_",year,"_",doy,".tif"),
-                overwrite=TRUE)
+    writeRaster(spatialpred*10,paste0(predpath,"/",year,"/prediction_",year,"_",doy,".tif"),
+                overwrite=TRUE,datatype='INT2S')
     print(i)
     file.remove(list.files(tmppath,full.names = TRUE))
   }

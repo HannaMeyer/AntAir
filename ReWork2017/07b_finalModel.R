@@ -15,14 +15,14 @@ Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
 trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
 
-bestmodel <- "rf"
-k <- 10
+bestmodel <- "rf_withVIS"
+
 
 load(paste0(modelpath,"/ffs_model_",bestmodel,".RData"))
 
-folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station", 
-                              timevar= "timevar",
-                              k = k)
+#prepare for leave one station out cv
+folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station",
+                              k = length(unique(trainingDat$Station)))
 
 
 predictors <- trainingDat[,names(ffs_model$trainingData)[-length(
@@ -46,7 +46,7 @@ if (bestmodel=="nnet"){
 model_final <- train(predictors,
                      response,
                      method = method,
-                     importance =TRUE,
+                     importance = TRUE,
                      tuneLength = 15,
                      trControl = ctrl)
 save(model_final,file=paste0(modelpath,"/model_final_",bestmodel,".RData"))
