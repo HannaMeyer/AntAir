@@ -15,8 +15,9 @@ Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
 trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
 
-bestmodel <- "rf_withVIS"
-
+bestmodel <- "rf"
+method <- "rf"
+k <- 10
 
 load(paste0(modelpath,"/ffs_model_",bestmodel,".RData"))
 
@@ -42,7 +43,8 @@ if (bestmodel=="nnet"){
   ctrl$linout = TRUE
 }
 
-
+cl <- makeCluster(k)
+registerDoParallel(cl)
 model_final <- train(predictors,
                      response,
                      method = method,
@@ -51,3 +53,4 @@ model_final <- train(predictors,
                      trControl = ctrl)
 save(model_final,file=paste0(modelpath,"/model_final_",bestmodel,".RData"))
 
+stopCluster(cl)
