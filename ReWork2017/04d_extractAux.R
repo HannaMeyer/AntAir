@@ -33,9 +33,13 @@ for (i in 1:365){
 }
 aux_extr<- do.call("rbind",aux_extr)
 
-alt <-raster(paste0(rasterdata,"dem_recl.tif"))
+
+alt <- raster(paste0(rasterdata,"dem.tif"))
+#alt <-raster(paste0(rasterdata,"dem_recl.tif"))
 projection(alt)<-projection(StationDat)
+#projection(alt_raw)<-projection(StationDat)
 alt_extr <- data.frame("Name"=StationDat$Name, "DEM"=extract(alt,StationDat))
+
 aux_extr <- merge(aux_extr,alt_extr,by.x="Station",by.y="Name")
 
 ice <- raster (paste0(rasterdata,"bedmap2_thickness.tif"))

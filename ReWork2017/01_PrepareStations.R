@@ -5,7 +5,7 @@ library(rgdal)
 library(lubridate)
 library(plyr)
 
-scriptpath <- "/home/hanna/Documents/Release/environmentalinformatics-marburg/magic/Tair4Antarctica/ReWork2017/"
+scriptpath <- "/home/hanna/Documents/Release/environmentalinformatics-marburg/AntAir/ReWork2017/"
 mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
 
 datapath <- paste0(mainpath,"/data/")
