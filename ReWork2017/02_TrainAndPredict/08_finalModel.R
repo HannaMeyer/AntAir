@@ -17,10 +17,11 @@ Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
 trainingDat <- get(load(paste0(modelpath,"trainingDat.RData")))
 
-bestmodel <- "pls_withVIS"
-method <- "pls"
+bestmodel <- "rf_withVIS"
+method <- "rf"
 #k <- 10
 k <- length(unique(trainingDat$Station))
+variables_within_SE <- TRUE # use only variables from ffs within SE of best model
 
 load(paste0(modelpath,"/ffs_model_",bestmodel,".RData"))
 
@@ -28,9 +29,21 @@ load(paste0(modelpath,"/ffs_model_",bestmodel,".RData"))
 #prepare for leave one station out cv
 folds <- CreateSpacetimeFolds(trainingDat, spacevar = "Station",
                               k = k)
+### see which variables are within SE of best model
+if (variables_within_SE){
+  tmp <- c()
+  for (i in 1:length(ffs_model$selectedvars_perf)){
+    tmp <- c(tmp,which(ffs_model$selectedvars_perf< ffs_model$selectedvars_perf[i]-
+                         ffs_model$selectedvars_perf_SE[i])[1])
+  }
+  cutoff <- max(tmp,na.rm=TRUE)
+  predictornames <- ffs_model$selectedvars[1:(cutoff+1)]
+  ###
+}else{
+  predictornames <- ffs_model$selectedvars
+}
 
-predictors <- trainingDat[,names(ffs_model$trainingData)[-length(
-  names(ffs_model$trainingData))]]
+predictors <- trainingDat[,which(names(trainingDat)%in%predictornames)]
 
 
 if (method=="gbm"){

@@ -47,10 +47,12 @@ for (modeltype in models){
                          colors=viridis(10)))
  dev.off()
  
-  
+ save(testdat,file=paste0(vispath,"/external_validation_",modeltype,".RData"))
+ 
+ 
   results_external <- rbind(results_external, 
                    data.frame("model"=modeltype,
-                              round(regressionStats(prd = dat$prediction,obs=dat$Temperature)[,c(5,7)],2)))
+                              round(regressionStats(prd = dat$prediction,obs=dat$Temperature)[,c(3:7)],2)))
 }
 
 write.csv(results_external,

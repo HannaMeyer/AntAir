@@ -1,6 +1,5 @@
-###08_prediction
+###prediction
 
-#07 run ffs
 rm(list=ls())
 library(caret)
 library(raster)
@@ -26,9 +25,9 @@ years <- 2016
 template <-raster(paste0(rasterdata,"/template.tif"))
 DEM <- raster(paste0(rasterdata,"/dem.tif"))
 names(DEM) <- "DEM"
-ice <- raster(paste0(rasterdata,"/ice.tif"))
+#ice <- raster(paste0(rasterdata,"/ice.tif"))
 DEM <- resample(DEM,template)
-ice <- resample(ice,template)
+#ice <- resample(ice,template)
 
 predictors <- names(model$trainingData)
 for (year in years){
@@ -76,15 +75,19 @@ for (year in years){
     names(preds) <- c("LST_day","LST_night")
     if(any(grepl("refl", names(model$trainingData)))){
       VISdats <- MODIS_VIS[substr(VIS_dates,5,7)==doy]
+      nme <- substr(VISdats,nchar(VISdats)-13,nchar(VISdats)-6)
+      VISdats <- VISdats[nme%in%names(model$trainingData)]
+      nme <- nme[nme%in%names(model$trainingData)]
       VIS <- tryCatch(
         stack(VISdats),error=function(e)e)
-      VIS[is.na(VIS)] <- 0
-      VIS[VIS<0] <- 0
       if(inherits(VIS,"error")){
         next
       }
+      rclmat <- matrix(c(NA, 0, 0,-990,0,0), ncol=3, byrow=TRUE)
+      VIS <- reclassify(VIS, rclmat)
+      
       VIS <- resample(VIS,template)
-      names(VIS) <- substr(names(VIS),nchar(names(VIS))-9,nchar(names(VIS))-2)
+      names(VIS)<- nme
       preds <- stack(preds,VIS)
     }
     if(inherits(LST_night,"error")|inherits(LST_day,"error")){
@@ -105,8 +108,10 @@ for (year in years){
     }
     
     
-    preds <- stack(preds,DEM,ice)
-    
+    #preds <- stack(preds,DEM,ice)
+    preds <- stack(preds,DEM)
+    print(names(model$trainingData))
+    print(names(preds))
     spatialpred <- predict(preds,model)
     writeRaster(spatialpred*10,paste0(predpath,"/",year,"/prediction_",year,"_",doy,".tif"),
                 overwrite=TRUE,datatype='INT2S')

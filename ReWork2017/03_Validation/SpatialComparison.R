@@ -53,16 +53,18 @@ for (modeltype in models){
   dat$model <- modeltype
   validdat[[acc]] <- dat
   preds <- preds[,c("pred","obs")]
-  results_LLO_mean <- apply(dat[,1:2],2,mean)
-  results_LLO_sd <- apply(dat[,1:2],2,sd)
+  results_LLO_mean <- apply(dat[,1:3],2,mean)
+  results_LLO_sd <- apply(dat[,1:3],2,sd)
   results_LLO_tmp <- data.frame("Model"=modeltype,
+                                "MAE"=round(results_LLO_mean[3],2),
+                                "MAE_SD"=round(results_LLO_sd[3],2),
                                 "RMSE"=round(results_LLO_mean[1],2),
                                 "RMSE_SD"=round(results_LLO_sd[1],2),
                                 "Rsquared"=round(results_LLO_mean[2],2),
                                 "Rsquared_SD"=round(results_LLO_sd[2],2))
   results_LLO <- rbind(results_LLO,results_LLO_tmp)
   
-  
+  save(preds,file=paste0(vispath,"/LLO_globalvalidation_",modeltype,".RData"))
   
   pdf(paste0(vispath,"/LLO_globalvalidation_",modeltype,".pdf"),width=6,height=5)
   print(ggplot(preds, aes(obs,pred)) + 
@@ -97,6 +99,7 @@ ggplot(data = validdat, aes(x = model, y = value)) +
 dev.off()
 
 results_LLO$RMSE_global <- round(results_global$RMSE,2)
+results_LLO$MAE_global <- round(results_global$MAE,2)
 results_LLO$Rsquared_global <- round(results_global$Rsq,2)
 
 write.csv(results_LLO,
