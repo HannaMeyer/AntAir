@@ -70,7 +70,9 @@ for (year in years){
                                       terra_night[substr(terra_night,nchar(terra_night)-6,nchar(terra_night)-4)==doy]),
                                 na.rm=T),
                            error=function(e)e)
-    
+    if(inherits(LST_day,"error")|inherits(LST_night,"error")){
+      next
+    }
     preds <- stack(LST_day,LST_night)
     names(preds) <- c("LST_day","LST_night")
     if(any(grepl("refl", names(model$trainingData)))){

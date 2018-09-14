@@ -36,7 +36,11 @@ if (variables_within_SE){
     tmp <- c(tmp,which(ffs_model$selectedvars_perf< ffs_model$selectedvars_perf[i]-
                          ffs_model$selectedvars_perf_SE[i])[1])
   }
+  if (any(!is.na(tmp))){
   cutoff <- max(tmp,na.rm=TRUE)
+  }else{
+    cutoff <- 1
+  }
   predictornames <- ffs_model$selectedvars[1:(cutoff+1)]
   ###
 }else{
