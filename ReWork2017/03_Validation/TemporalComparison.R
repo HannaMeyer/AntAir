@@ -3,8 +3,8 @@ rm(list=ls())
 library(caret)
 library(raster)
 library(rgdal)
-library(Rsenal)
 library(viridis)
+library(sptm)
 #mainpath <- "/mnt/sd19007/users/hmeyer/Antarctica/ReModel2017/"
 mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
 datapath <- paste0(mainpath,"/data/")
@@ -19,16 +19,30 @@ vispath <- datapath <- paste0(mainpath,"/visualizations/")
 tmppath <- paste0(mainpath,"/tmp/")
 rasterOptions(tmpdir = tmppath)
 
-models <- c("rf","gbm","linear","pls","poly")
+models <- c("rf","gbm","lm","pls","nnet")
+
+
+
+
+scaling <- function(predictors,scaleStats){
+  for (i in 1:ncol(predictors)){
+    rowID <- which(row.names(scaleStats)==names(predictors)[i])
+    predictors[,i] <- (predictors[,i]-scaleStats$mean[rowID])/scaleStats$sd[rowID]
+  }
+  return(predictors)
+}
+
+
+
 plot_ext <- list()
 results_external <- c()
 for (modeltype in models){
   model <- get(load(paste0(modelpath,"model_final_",modeltype,".RData")))
   testdat <- get(load(paste0(modelpath,"testingDat.RData")))
-  testdat$meanLST <- (testdat$LST_day+testdat$LST_night)/2
-  if (modeltype=="pls"){
+  testdat$LSTmean <- (testdat$LST_day+testdat$LST_night)/2
+  if (modeltype=="pls"||modeltype=="nnet"){
     testdat[,which(names(testdat)%in%names(model$trainingData))] <- data.frame(
-      scale(testdat[,which(names(testdat)%in%names(model$trainingData))]))
+      scaling(testdat[,which(names(testdat)%in%names(model$trainingData))],model$scaleStats))
   }
   testdat$prediction <- predict(model,testdat)
   

@@ -3,7 +3,7 @@ rm(list=ls())
 library(caret)
 library(raster)
 library(rgdal)
-library(Rsenal)
+library(sptm)
 library(viridis)
 library(ggplot2)
 library(reshape2)
@@ -20,7 +20,7 @@ vispath <- datapath <- paste0(mainpath,"/visualizations/")
 tmppath <- paste0(mainpath,"/tmp/")
 rasterOptions(tmpdir = tmppath)
 
-models <- c("rf","gbm","linear","pls","poly")
+models <- c("rf","gbm","lm","pls","nnet")
 
 validdat <- list()
 acc <- 0
@@ -34,6 +34,12 @@ for (modeltype in models){
   if (modeltype=="rf"){
     dat <- dat[dat$mtry==model$bestTune$mtry,]
     preds <- preds[preds$mtry==model$bestTune$mtry,]
+  }
+  if (modeltype=="nnet"){
+    dat <- dat[dat$size==model$bestTune$size&
+                 dat$decay==model$bestTune$decay,]
+    preds <- preds[preds$size==model$bestTune$size&
+                     preds$decay==model$bestTune$decay,]
   }
   if (modeltype=="pls"){
     dat <- dat[dat$ncomp==model$bestTune$ncomp,]
