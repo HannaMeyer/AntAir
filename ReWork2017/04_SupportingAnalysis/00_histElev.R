@@ -33,3 +33,4 @@ qplot(subs$DEM, geom="histogram",
                                                            breaks=c(2,4,6,8),
                                                            limits=c(0,10))
 dev.off()
+
