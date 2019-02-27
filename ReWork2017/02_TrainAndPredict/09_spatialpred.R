@@ -73,7 +73,7 @@ for (year in years){
     hillshades <- list.files(paste0(rasterdata,"/hillshade/"),pattern=".tif$",full.names = TRUE)
     solarprops <- list.files(paste0(rasterdata,"/solarinfo/"),pattern=".tif$",full.names = TRUE)
   }
-  for (i in c(48:58,365)){
+  for (i in 1:365){
     doy <- sprintf("%03d", i)
     
     if(length(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy])==0&
