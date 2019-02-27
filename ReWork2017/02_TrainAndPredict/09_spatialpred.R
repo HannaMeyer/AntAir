@@ -20,7 +20,7 @@ tmppath <- paste0(mainpath,"/tmp/")
 
 ###### Settings
 methods <- c("rf","nnet","pls","lm","gbm")
-years <- 2016
+years <- c(2016)
 ###### 
 for (i in 1:length(methods)){
   #  predpath <- paste0(predpath, "/",methods[i],"/")
@@ -45,7 +45,7 @@ predictors <- unique (predictors)
 predictors <- predictors[-which(predictors==".outcome")]
 ################################################################################
 
-for (year in years){
+for (year in years){ 
   tmppath <- paste0(tmppath,"/",year)
   dir.create(tmppath)
   rasterOptions(tmpdir = tmppath)
@@ -73,22 +73,52 @@ for (year in years){
     hillshades <- list.files(paste0(rasterdata,"/hillshade/"),pattern=".tif$",full.names = TRUE)
     solarprops <- list.files(paste0(rasterdata,"/solarinfo/"),pattern=".tif$",full.names = TRUE)
   }
-  for (i in 1:365){
+  for (i in c(48:58,365)){
     doy <- sprintf("%03d", i)
     
+    if(length(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy])==0&
+       length(terra_day[substr(terra_day,nchar(terra_day)-6,nchar(terra_day)-4)==doy])>0){
+      LST_day <-  raster(terra_day[substr(terra_day,nchar(terra_day)-6,nchar(terra_day)-4)==doy])
+     # print("LST day only based on Terra")
+    }else{
+      if(length(terra_day[substr(terra_day,nchar(terra_day)-6,nchar(terra_day)-4)==doy])==0&
+         length(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy])>0){
+        LST_day <-  raster(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy])
+       # print("LST day only based on Aqua")
+        
+      }else{
+        LST_day <- tryCatch(
+          mean(stack(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy],
+                     terra_day[substr(terra_day,nchar(terra_day)-6,nchar(terra_day)-4)==doy]),
+               na.rm=T),
+          error=function(e)e)
+       # print("LST day based on both or none")
+      }
+    }
     
-    LST_day <- tryCatch(
-      mean(stack(aqua_day[substr(aqua_day,nchar(aqua_day)-6,nchar(aqua_day)-4)==doy],
-                 terra_day[substr(terra_day,nchar(terra_day)-6,nchar(terra_day)-4)==doy]),
-           na.rm=T),
-      error=function(e)e)
     
-    LST_night <-  tryCatch(mean(stack(aqua_night[substr(aqua_night,nchar(aqua_night)-6,nchar(aqua_night)-4)==doy],
-                                      terra_night[substr(terra_night,nchar(terra_night)-6,nchar(terra_night)-4)==doy]),
-                                na.rm=T),
-                           error=function(e)e)
-    if(inherits(LST_day,"error")|inherits(LST_night,"error")){
-      next
+    
+    if(length(aqua_night[substr(aqua_night,nchar(aqua_night)-6,nchar(aqua_night)-4)==doy])==0&
+       length(terra_night[substr(terra_night,nchar(terra_night)-6,nchar(terra_night)-4)==doy])>0){
+      LST_night <-  raster(terra_night[substr(terra_night,nchar(terra_night)-6,
+                                              nchar(terra_night)-4)==doy])
+      print("LST night only based on Terra")
+    }else{
+      if(length(terra_night[substr(terra_night,nchar(terra_night)-6,nchar(terra_night)-4)==doy])==0&
+         length(aqua_night[substr(aqua_night,nchar(aqua_night)-6,nchar(aqua_night)-4)==doy])>0){
+        LST_night <-  raster(aqua_night[substr(aqua_night,nchar(aqua_night)-6,nchar(aqua_night)-4)==doy])
+        print("LST night only based on Aqua")
+      }else{
+        
+        LST_night <-  tryCatch(mean(stack(aqua_night[substr(aqua_night,nchar(aqua_night)-6,nchar(aqua_night)-4)==doy],
+                                          terra_night[substr(terra_night,nchar(terra_night)-6,nchar(terra_night)-4)==doy]),
+                                    na.rm=T),
+                               error=function(e)e)
+        print("LST night based on both or none")
+        if(inherits(LST_day,"error")|inherits(LST_night,"error")){
+          next
+        }
+      }
     }
     preds <- stack(LST_day,LST_night)
     names(preds) <- c("LST_day","LST_night")

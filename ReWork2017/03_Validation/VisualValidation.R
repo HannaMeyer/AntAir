@@ -30,7 +30,7 @@ preds <- stack()
 for (i in 1:length(models)){
   preds <- stack(preds,paste0(predpath,"/",models[i],"/",year,"/prediction_",year,"_",day,".tif"))
 }
-names(preds) <- models
+names(preds) <- toupper(models)
 #dat <- stack(dat,preds/10)
 dat <- preds/10
 

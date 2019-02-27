@@ -42,5 +42,6 @@ ggplot(dat, aes(obs,pred)) +
                        #trans = "log", 
                        #breaks = 10^(0:3),
                        colors=viridis(10))+
+  theme_bw()+
   facet_grid(.~ type)
 dev.off()
