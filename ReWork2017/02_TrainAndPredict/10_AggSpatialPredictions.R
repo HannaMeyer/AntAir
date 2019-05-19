@@ -7,14 +7,16 @@ library(Rsenal)
 library(viridis)
 library(lubridate)
 
-mainpath <- "/mnt/sd19007/users/hmeyer/Antarctica/ReModel2017/"
-#mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
+#mainpath <- "/mnt/sd19007/users/hmeyer/Antarctica/ReModel2017/"
+mainpath <- "/media/hanna/data/Antarctica/ReModel2017/"
 datapath <- paste0(mainpath,"/data/")
 rdatapath <- paste0(datapath, "/RData/")
 rasterdata <- paste0(datapath,"/raster/")
 Shppath <- paste0(datapath,"/ShapeLayers/")
 modelpath <- paste0(datapath, "/modeldat/")
-predpath <- paste0(datapath, "/predictions/")
+predpath <- paste0(datapath, "/predictions/FinalAntAirProduct/daily/")
+outpath1 <- paste0(datapath, "/predictions/FinalAntAirProduct/monthly/")
+outpath2 <- paste0(datapath, "/predictions/FinalAntAirProduct/yearly/")
 MODISpath <- paste0(mainpath,"/MODISLST/")
 vispath <- datapath <- paste0(mainpath,"/visualizations/")
 
@@ -22,6 +24,7 @@ tmppath <- paste0(mainpath,"/tmp/")
 rasterOptions(tmpdir = tmppath)
 
 years <- 2003:2017
+#years <- c(2011:2012,2014:2015)
 
 for (year in years){
 
@@ -42,10 +45,10 @@ print(i)
 Sys.setlocale(locale = "en_US.UTF-8")
 names(AntAir) <- month(1:12,label=T)
 
-writeRaster(AntAir,paste0(predpath,"/yearly/AntAir_monthly_",year,".grd"),
+writeRaster(AntAir,paste0(outpath1,"/AntAir_monthly_",year,".tif"),
             overwrite=T,datatype='INT2S')
 AntAir_year <- mean(AntAir,na.rm=TRUE)
-writeRaster(AntAir_year,paste0(predpath,"/yearly/AntAir_yearly_",year,".grd"),
+writeRaster(AntAir_year,paste0(outpath2,"/AntAir_yearly_",year,".tif"),
             overwrite=T,datatype='INT2S')
 rm(AntAir)
 gc()
